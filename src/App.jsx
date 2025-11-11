@@ -1,4 +1,4 @@
-import { addDoc, collection, deleteDoc, doc, getDocs, orderBy, query } from 'firebase/firestore'
+import { addDoc, collection, deleteDoc, doc, getDocs, onSnapshot, orderBy, query } from 'firebase/firestore'
 import { useEffect, useState } from 'react'
 import './App.css'
 import { db } from './firebase'
@@ -13,42 +13,40 @@ function App() {
   const [transferData, setTransferData] = useState([])
   const [loading, setLoading] = useState(true)
 
-  // Load income data from Firestore
+  // Real-time listener for income data from Firestore
   useEffect(() => {
-    const loadIncomeData = async () => {
-      try {
-        const q = query(collection(db, 'income'), orderBy('timestamp', 'desc'))
-        const querySnapshot = await getDocs(q)
-        const data = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }))
-        setIncomeData(data)
-      } catch (error) {
-        console.error('Error loading income data:', error)
-      }
-    }
-    loadIncomeData()
+    const q = query(collection(db, 'income'), orderBy('timestamp', 'desc'))
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const data = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }))
+      setIncomeData(data)
+      setLoading(false)
+    }, (error) => {
+      console.error('Error loading income data:', error)
+      setLoading(false)
+    })
+
+    // Cleanup listener on unmount
+    return () => unsubscribe()
   }, [])
 
-  // Load transfer data from Firestore
+  // Real-time listener for transfer data from Firestore
   useEffect(() => {
-    const loadTransferData = async () => {
-      try {
-        const q = query(collection(db, 'transfers'), orderBy('timestamp', 'desc'))
-        const querySnapshot = await getDocs(q)
-        const data = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }))
-        setTransferData(data)
-        setLoading(false)
-      } catch (error) {
-        console.error('Error loading transfer data:', error)
-        setLoading(false)
-      }
-    }
-    loadTransferData()
+    const q = query(collection(db, 'transfers'), orderBy('timestamp', 'desc'))
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const data = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }))
+      setTransferData(data)
+    }, (error) => {
+      console.error('Error loading transfer data:', error)
+    })
+
+    // Cleanup listener on unmount
+    return () => unsubscribe()
   }, [])
 
   const bankOptions = [
@@ -69,8 +67,7 @@ function App() {
         date: new Date().toLocaleDateString('en-GB'),
         timestamp: Date.now()
       }
-      const docRef = await addDoc(collection(db, 'income'), newIncome)
-      setIncomeData([{ id: docRef.id, ...newIncome }, ...incomeData])
+      await addDoc(collection(db, 'income'), newIncome)
       console.log('Income submitted:', { amount, bank })
       // Reset form
       setAmount('')
@@ -89,8 +86,7 @@ function App() {
         date: new Date().toLocaleDateString('en-GB'),
         timestamp: Date.now()
       }
-      const docRef = await addDoc(collection(db, 'transfers'), newTransfer)
-      setTransferData([{ id: docRef.id, ...newTransfer }, ...transferData])
+      await addDoc(collection(db, 'transfers'), newTransfer)
       console.log('Transfer submitted:', { amount: transferAmount })
       // Reset form
       setTransferAmount('')
@@ -104,7 +100,7 @@ function App() {
     if (window.confirm('Are you sure you want to delete this income entry?')) {
       try {
         await deleteDoc(doc(db, 'income', id))
-        setIncomeData(incomeData.filter(income => income.id !== id))
+        // Real-time listener will update the state automatically
       } catch (error) {
         console.error('Error deleting income:', error)
         alert('Failed to delete income. Please try again.')
@@ -115,10 +111,11 @@ function App() {
   const handleDeleteAll = async () => {
     if (window.confirm('Are you sure you want to delete all income data?')) {
       try {
-        const querySnapshot = await getDocs(collection(db, 'income'))
+        const q = query(collection(db, 'income'))
+        const querySnapshot = await getDocs(q)
         const deletePromises = querySnapshot.docs.map(doc => deleteDoc(doc.ref))
         await Promise.all(deletePromises)
-        setIncomeData([])
+        // Real-time listener will update the state automatically
       } catch (error) {
         console.error('Error deleting all income:', error)
         alert('Failed to delete all income. Please try again.')
@@ -130,7 +127,7 @@ function App() {
     if (window.confirm('Are you sure you want to delete this transfer entry?')) {
       try {
         await deleteDoc(doc(db, 'transfers', id))
-        setTransferData(transferData.filter(transfer => transfer.id !== id))
+        // Real-time listener will update the state automatically
       } catch (error) {
         console.error('Error deleting transfer:', error)
         alert('Failed to delete transfer. Please try again.')
@@ -141,10 +138,11 @@ function App() {
   const handleDeleteAllTransfers = async () => {
     if (window.confirm('Are you sure you want to delete all transfer data?')) {
       try {
-        const querySnapshot = await getDocs(collection(db, 'transfers'))
+        const q = query(collection(db, 'transfers'))
+        const querySnapshot = await getDocs(q)
         const deletePromises = querySnapshot.docs.map(doc => deleteDoc(doc.ref))
         await Promise.all(deletePromises)
-        setTransferData([])
+        // Real-time listener will update the state automatically
       } catch (error) {
         console.error('Error deleting all transfers:', error)
         alert('Failed to delete all transfers. Please try again.')
