@@ -16,6 +16,15 @@
   color: #646cff;
 }
 
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 50vh;
+  font-size: 1.2rem;
+  color: #646cff;
+}
+
 .button-group {
   display: flex;
   gap: 1rem;

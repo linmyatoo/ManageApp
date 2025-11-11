@@ -1,16 +1,102 @@
-# React + Vite
+# ManageApp - Income & Transfer Tracker
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A responsive web application to track your income and transfers across multiple bank accounts with cloud synchronization.
 
-Currently, two official plugins are available:
+## 🎯 Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- ✅ Track income from multiple banks
+- ✅ Record money transfers
+- ✅ View summaries grouped by bank
+- ✅ See your final balance (Income - Transfers)
+- ✅ Cloud storage - data syncs across all devices
+- ✅ Fully responsive design (works on mobile, tablet, desktop)
+- ✅ Data persistence with Firebase Firestore
 
-## React Compiler
+## 🚨 SETUP REQUIRED
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+**The app now uses Firebase Firestore for cloud storage.** You need to complete a quick 5-minute setup to enable this feature.
 
-## Expanding the ESLint configuration
+👉 **Read `SETUP_REQUIRED.md` for quick setup instructions**
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Or see `FIRESTORE_SETUP.md` for detailed step-by-step guide.
+
+## 🌐 Live App
+
+https://manageapp-fa78c.web.app
+
+## 🛠️ Technologies
+
+- React 18
+- Vite
+- Firebase Firestore (Database)
+- Firebase Hosting (Deployment)
+- CSS (Responsive Design)
+
+## 📱 How to Use
+
+1. Click **"Income"** to add income entries
+   - Enter amount
+   - Select bank account
+   - Submit
+2. Click **"Transfer"** to record money transfers
+   - Enter amount
+   - Submit
+3. View summaries:
+   - **Income Summary**: Grouped by bank with totals
+   - **Transfer Summary**: All transfers with total
+   - **Final Balance**: Your remaining balance
+
+## 🔧 Development
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Run development server:
+
+```bash
+npm run dev
+```
+
+Build for production:
+
+```bash
+npm run build
+```
+
+Deploy to Firebase:
+
+```bash
+firebase deploy
+```
+
+## 📂 Project Structure
+
+```
+ManageApp/
+├── src/
+│   ├── App.jsx          # Main application component
+│   ├── App.css          # Responsive styles
+│   ├── firebase.js      # Firebase configuration
+│   └── main.jsx         # App entry point
+├── public/
+├── firebase.json        # Firebase hosting config
+├── .firebaserc         # Firebase project config
+└── README.md
+```
+
+## 📝 Documentation
+
+- `SETUP_REQUIRED.md` - Quick setup guide for Firebase
+- `FIRESTORE_SETUP.md` - Detailed Firestore setup instructions
+- `DEPLOYMENT.md` - Firebase deployment guide
+
+## 🔐 Security Note
+
+Currently, the app allows anyone with the URL to read/write data. This is suitable for personal use. If you want to add user authentication, refer to Firebase Authentication documentation.
+
+## 📄 License
+
+MIT

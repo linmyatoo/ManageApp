@@ -1,5 +1,7 @@
+import { addDoc, collection, deleteDoc, doc, getDocs, orderBy, query } from 'firebase/firestore'
 import { useEffect, useState } from 'react'
 import './App.css'
+import { db } from './firebase'
 
 function App() {
   const [showIncomeForm, setShowIncomeForm] = useState(false)
@@ -7,24 +9,47 @@ function App() {
   const [amount, setAmount] = useState('')
   const [bank, setBank] = useState('')
   const [transferAmount, setTransferAmount] = useState('')
-  const [incomeData, setIncomeData] = useState(() => {
-    const saved = localStorage.getItem('incomeData')
-    return saved ? JSON.parse(saved) : []
-  })
-  const [transferData, setTransferData] = useState(() => {
-    const saved = localStorage.getItem('transferData')
-    return saved ? JSON.parse(saved) : []
-  })
+  const [incomeData, setIncomeData] = useState([])
+  const [transferData, setTransferData] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  // Save to localStorage whenever incomeData changes
+  // Load income data from Firestore
   useEffect(() => {
-    localStorage.setItem('incomeData', JSON.stringify(incomeData))
-  }, [incomeData])
+    const loadIncomeData = async () => {
+      try {
+        const q = query(collection(db, 'income'), orderBy('timestamp', 'desc'))
+        const querySnapshot = await getDocs(q)
+        const data = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }))
+        setIncomeData(data)
+      } catch (error) {
+        console.error('Error loading income data:', error)
+      }
+    }
+    loadIncomeData()
+  }, [])
 
-  // Save to localStorage whenever transferData changes
+  // Load transfer data from Firestore
   useEffect(() => {
-    localStorage.setItem('transferData', JSON.stringify(transferData))
-  }, [transferData])
+    const loadTransferData = async () => {
+      try {
+        const q = query(collection(db, 'transfers'), orderBy('timestamp', 'desc'))
+        const querySnapshot = await getDocs(q)
+        const data = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }))
+        setTransferData(data)
+        setLoading(false)
+      } catch (error) {
+        console.error('Error loading transfer data:', error)
+        setLoading(false)
+      }
+    }
+    loadTransferData()
+  }, [])
 
   const bankOptions = [
     'BB Bangkok Bank',
@@ -35,55 +60,95 @@ function App() {
     'LMO SCB'
   ]
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    const newIncome = {
-      id: Date.now(),
-      amount: parseFloat(amount),
-      bank: bank,
-      date: new Date().toLocaleDateString('en-GB')
+    try {
+      const newIncome = {
+        amount: parseFloat(amount),
+        bank: bank,
+        date: new Date().toLocaleDateString('en-GB'),
+        timestamp: Date.now()
+      }
+      const docRef = await addDoc(collection(db, 'income'), newIncome)
+      setIncomeData([{ id: docRef.id, ...newIncome }, ...incomeData])
+      console.log('Income submitted:', { amount, bank })
+      // Reset form
+      setAmount('')
+      setBank('')
+    } catch (error) {
+      console.error('Error adding income:', error)
+      alert('Failed to save income. Please try again.')
     }
-    setIncomeData([...incomeData, newIncome])
-    console.log('Income submitted:', { amount, bank })
-    // Reset form
-    setAmount('')
-    setBank('')
   }
 
-  const handleTransferSubmit = (e) => {
+  const handleTransferSubmit = async (e) => {
     e.preventDefault()
-    const newTransfer = {
-      id: Date.now(),
-      amount: parseFloat(transferAmount),
-      date: new Date().toLocaleDateString('en-GB')
+    try {
+      const newTransfer = {
+        amount: parseFloat(transferAmount),
+        date: new Date().toLocaleDateString('en-GB'),
+        timestamp: Date.now()
+      }
+      const docRef = await addDoc(collection(db, 'transfers'), newTransfer)
+      setTransferData([{ id: docRef.id, ...newTransfer }, ...transferData])
+      console.log('Transfer submitted:', { amount: transferAmount })
+      // Reset form
+      setTransferAmount('')
+    } catch (error) {
+      console.error('Error adding transfer:', error)
+      alert('Failed to save transfer. Please try again.')
     }
-    setTransferData([...transferData, newTransfer])
-    console.log('Transfer submitted:', { amount: transferAmount })
-    // Reset form
-    setTransferAmount('')
   }
 
-  const handleDeleteIncome = (id) => {
+  const handleDeleteIncome = async (id) => {
     if (window.confirm('Are you sure you want to delete this income entry?')) {
-      setIncomeData(incomeData.filter(income => income.id !== id))
+      try {
+        await deleteDoc(doc(db, 'income', id))
+        setIncomeData(incomeData.filter(income => income.id !== id))
+      } catch (error) {
+        console.error('Error deleting income:', error)
+        alert('Failed to delete income. Please try again.')
+      }
     }
   }
 
-  const handleDeleteAll = () => {
+  const handleDeleteAll = async () => {
     if (window.confirm('Are you sure you want to delete all income data?')) {
-      setIncomeData([])
+      try {
+        const querySnapshot = await getDocs(collection(db, 'income'))
+        const deletePromises = querySnapshot.docs.map(doc => deleteDoc(doc.ref))
+        await Promise.all(deletePromises)
+        setIncomeData([])
+      } catch (error) {
+        console.error('Error deleting all income:', error)
+        alert('Failed to delete all income. Please try again.')
+      }
     }
   }
 
-  const handleDeleteTransfer = (id) => {
+  const handleDeleteTransfer = async (id) => {
     if (window.confirm('Are you sure you want to delete this transfer entry?')) {
-      setTransferData(transferData.filter(transfer => transfer.id !== id))
+      try {
+        await deleteDoc(doc(db, 'transfers', id))
+        setTransferData(transferData.filter(transfer => transfer.id !== id))
+      } catch (error) {
+        console.error('Error deleting transfer:', error)
+        alert('Failed to delete transfer. Please try again.')
+      }
     }
   }
 
-  const handleDeleteAllTransfers = () => {
+  const handleDeleteAllTransfers = async () => {
     if (window.confirm('Are you sure you want to delete all transfer data?')) {
-      setTransferData([])
+      try {
+        const querySnapshot = await getDocs(collection(db, 'transfers'))
+        const deletePromises = querySnapshot.docs.map(doc => deleteDoc(doc.ref))
+        await Promise.all(deletePromises)
+        setTransferData([])
+      } catch (error) {
+        console.error('Error deleting all transfers:', error)
+        alert('Failed to delete all transfers. Please try again.')
+      }
     }
   }
 
@@ -107,6 +172,14 @@ function App() {
   const transferGrandTotal = transferData.reduce((sum, item) => sum + item.amount, 0)
 
   const finalBalance = grandTotal - transferGrandTotal
+
+  if (loading) {
+    return (
+      <div className="app-container">
+        <div className="loading">Loading your data...</div>
+      </div>
+    )
+  }
 
   return (
     <div className="app-container">
