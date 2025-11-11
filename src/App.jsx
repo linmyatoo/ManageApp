@@ -1,0 +1,220 @@
+import { useEffect, useState } from 'react'
+import './App.css'
+
+function App() {
+  const [showIncomeForm, setShowIncomeForm] = useState(false)
+  const [showTransferForm, setShowTransferForm] = useState(false)
+  const [amount, setAmount] = useState('')
+  const [bank, setBank] = useState('')
+  const [transferAmount, setTransferAmount] = useState('')
+  const [incomeData, setIncomeData] = useState(() => {
+    const saved = localStorage.getItem('incomeData')
+    return saved ? JSON.parse(saved) : []
+  })
+
+  // Save to localStorage whenever incomeData changes
+  useEffect(() => {
+    localStorage.setItem('incomeData', JSON.stringify(incomeData))
+  }, [incomeData])
+
+  const bankOptions = [
+    'BB Bangkok Bank',
+    'BB SCB',
+    'BB Kplus',
+    'BB KTB',
+    'LMO Bangkok Bank',
+    'LMO SCB'
+  ]
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    const newIncome = {
+      id: Date.now(),
+      amount: parseFloat(amount),
+      bank: bank,
+      date: new Date().toLocaleDateString('en-GB')
+    }
+    setIncomeData([...incomeData, newIncome])
+    console.log('Income submitted:', { amount, bank })
+    // Reset form
+    setAmount('')
+    setBank('')
+  }
+
+  const handleTransferSubmit = (e) => {
+    e.preventDefault()
+    console.log('Transfer submitted:', { amount: transferAmount })
+    // Add your form submission logic here
+    // Reset form and hide it
+    setTransferAmount('')
+    setShowTransferForm(false)
+  }
+
+  const handleDeleteIncome = (id) => {
+    if (window.confirm('Are you sure you want to delete this income entry?')) {
+      setIncomeData(incomeData.filter(income => income.id !== id))
+    }
+  }
+
+  const handleDeleteAll = () => {
+    if (window.confirm('Are you sure you want to delete all income data?')) {
+      setIncomeData([])
+    }
+  }
+
+  // Group income data by bank
+  const groupedByBank = incomeData.reduce((acc, income) => {
+    if (!acc[income.bank]) {
+      acc[income.bank] = []
+    }
+    acc[income.bank].push(income)
+    return acc
+  }, {})
+
+  // Calculate totals
+  const bankTotals = Object.keys(groupedByBank).map(bank => ({
+    bank,
+    total: groupedByBank[bank].reduce((sum, item) => sum + item.amount, 0)
+  }))
+
+  const grandTotal = incomeData.reduce((sum, item) => sum + item.amount, 0)
+
+  return (
+    <div className="app-container">
+      <h1>Manage App</h1>
+      
+      <div className="button-group">
+        <button 
+          className="income-button" 
+          onClick={() => {
+            setShowIncomeForm(!showIncomeForm)
+            setShowTransferForm(false)
+          }}
+        >
+          {showIncomeForm ? 'Hide Income Form' : 'Income'}
+        </button>
+
+        <button 
+          className="transfer-button" 
+          onClick={() => {
+            setShowTransferForm(!showTransferForm)
+            setShowIncomeForm(false)
+          }}
+        >
+          {showTransferForm ? 'Hide Transfer Form' : 'Transfer'}
+        </button>
+      </div>
+
+      {showIncomeForm && (
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label htmlFor="amount">Amount:</label>
+            <input
+              type="number"
+              id="amount"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="Enter amount"
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="bank">Bank:</label>
+            <select
+              id="bank"
+              value={bank}
+              onChange={(e) => setBank(e.target.value)}
+              required
+            >
+              <option value="">Select a bank</option>
+              {bankOptions.map((bankOption) => (
+                <option key={bankOption} value={bankOption}>
+                  {bankOption}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <button type="submit">Submit</button>
+        </form>
+      )}
+
+      {showTransferForm && (
+        <form onSubmit={handleTransferSubmit}>
+          <div className="form-group">
+            <label htmlFor="transferAmount">Amount:</label>
+            <input
+              type="number"
+              id="transferAmount"
+              value={transferAmount}
+              onChange={(e) => setTransferAmount(e.target.value)}
+              placeholder="Enter amount"
+              required
+            />
+          </div>
+
+          <button type="submit">Submit</button>
+        </form>
+      )}
+
+      {incomeData.length > 0 && (
+        <div className="income-table-container">
+          <div className="table-header">
+            <h2>Income Summary</h2>
+            <button className="delete-all-button" onClick={handleDeleteAll}>
+              Delete All
+            </button>
+          </div>
+          <table className="income-table">
+            <thead>
+              <tr>
+                <th>Bank</th>
+                <th>Date</th>
+                <th>Amount</th>
+                <th>Total</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {bankTotals.map((bankTotal) => (
+                <>
+                  {groupedByBank[bankTotal.bank].map((income, index) => (
+                    <tr key={income.id}>
+                      {index === 0 && (
+                        <td rowSpan={groupedByBank[bankTotal.bank].length}>
+                          {bankTotal.bank}
+                        </td>
+                      )}
+                      <td>{income.date}</td>
+                      <td>{income.amount.toLocaleString()}</td>
+                      {index === 0 && (
+                        <td rowSpan={groupedByBank[bankTotal.bank].length} className="bank-total">
+                          {bankTotal.total.toLocaleString()}
+                        </td>
+                      )}
+                      <td>
+                        <button 
+                          className="delete-button"
+                          onClick={() => handleDeleteIncome(income.id)}
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </>
+              ))}
+              <tr className="grand-total-row">
+                <td colSpan="4"><strong>Grand Total</strong></td>
+                <td><strong>{grandTotal.toLocaleString()}</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default App
