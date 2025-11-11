@@ -216,3 +216,64 @@ button[type="submit"]:active {
 .delete-button:active {
   background-color: #ac2925;
 }
+
+.balance-container {
+  margin-top: 2rem;
+  padding: 2rem;
+  background-color: #1a1a1a;
+  border-radius: 8px;
+  border: 2px solid #646cff;
+}
+
+.balance-container h2 {
+  margin-bottom: 1.5rem;
+  color: #646cff;
+  text-align: center;
+}
+
+.balance-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.balance-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem;
+  background-color: #2a2a2a;
+  border-radius: 4px;
+}
+
+.balance-item.final {
+  background-color: #333;
+  border: 1px solid #646cff;
+  padding: 1rem;
+  margin-top: 0.5rem;
+}
+
+.balance-label {
+  font-weight: 500;
+  color: #fff;
+}
+
+.balance-amount {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.balance-amount.income {
+  color: #42b983;
+}
+
+.balance-amount.transfer {
+  color: #d9534f;
+}
+
+.balance-amount.positive {
+  color: #42b983;
+}
+
+.balance-amount.negative {
+  color: #d9534f;
+}

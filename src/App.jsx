@@ -11,11 +11,20 @@ function App() {
     const saved = localStorage.getItem('incomeData')
     return saved ? JSON.parse(saved) : []
   })
+  const [transferData, setTransferData] = useState(() => {
+    const saved = localStorage.getItem('transferData')
+    return saved ? JSON.parse(saved) : []
+  })
 
   // Save to localStorage whenever incomeData changes
   useEffect(() => {
     localStorage.setItem('incomeData', JSON.stringify(incomeData))
   }, [incomeData])
+
+  // Save to localStorage whenever transferData changes
+  useEffect(() => {
+    localStorage.setItem('transferData', JSON.stringify(transferData))
+  }, [transferData])
 
   const bankOptions = [
     'BB Bangkok Bank',
@@ -43,11 +52,15 @@ function App() {
 
   const handleTransferSubmit = (e) => {
     e.preventDefault()
+    const newTransfer = {
+      id: Date.now(),
+      amount: parseFloat(transferAmount),
+      date: new Date().toLocaleDateString('en-GB')
+    }
+    setTransferData([...transferData, newTransfer])
     console.log('Transfer submitted:', { amount: transferAmount })
-    // Add your form submission logic here
-    // Reset form and hide it
+    // Reset form
     setTransferAmount('')
-    setShowTransferForm(false)
   }
 
   const handleDeleteIncome = (id) => {
@@ -59,6 +72,18 @@ function App() {
   const handleDeleteAll = () => {
     if (window.confirm('Are you sure you want to delete all income data?')) {
       setIncomeData([])
+    }
+  }
+
+  const handleDeleteTransfer = (id) => {
+    if (window.confirm('Are you sure you want to delete this transfer entry?')) {
+      setTransferData(transferData.filter(transfer => transfer.id !== id))
+    }
+  }
+
+  const handleDeleteAllTransfers = () => {
+    if (window.confirm('Are you sure you want to delete all transfer data?')) {
+      setTransferData([])
     }
   }
 
@@ -78,6 +103,10 @@ function App() {
   }))
 
   const grandTotal = incomeData.reduce((sum, item) => sum + item.amount, 0)
+
+  const transferGrandTotal = transferData.reduce((sum, item) => sum + item.amount, 0)
+
+  const finalBalance = grandTotal - transferGrandTotal
 
   return (
     <div className="app-container">
@@ -211,6 +240,68 @@ function App() {
               </tr>
             </tbody>
           </table>
+        </div>
+      )}
+
+      {transferData.length > 0 && (
+        <div className="income-table-container">
+          <div className="table-header">
+            <h2>Transfer Summary</h2>
+            <button className="delete-all-button" onClick={handleDeleteAllTransfers}>
+              Delete All
+            </button>
+          </div>
+          <table className="income-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Amount</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {transferData.map((transfer) => (
+                <tr key={transfer.id}>
+                  <td>{transfer.date}</td>
+                  <td>{transfer.amount.toLocaleString()}</td>
+                  <td>
+                    <button 
+                      className="delete-button"
+                      onClick={() => handleDeleteTransfer(transfer.id)}
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              <tr className="grand-total-row">
+                <td><strong>Grand Total</strong></td>
+                <td colSpan="2"><strong>{transferGrandTotal.toLocaleString()}</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {(incomeData.length > 0 || transferData.length > 0) && (
+        <div className="balance-container">
+          <h2>Final Balance</h2>
+          <div className="balance-summary">
+            <div className="balance-item">
+              <span className="balance-label">Total Income:</span>
+              <span className="balance-amount income">{grandTotal.toLocaleString()}</span>
+            </div>
+            <div className="balance-item">
+              <span className="balance-label">Total Transfer:</span>
+              <span className="balance-amount transfer">-{transferGrandTotal.toLocaleString()}</span>
+            </div>
+            <div className="balance-item final">
+              <span className="balance-label">Balance:</span>
+              <span className={`balance-amount ${finalBalance >= 0 ? 'positive' : 'negative'}`}>
+                {finalBalance.toLocaleString()}
+              </span>
+            </div>
+          </div>
         </div>
       )}
     </div>
